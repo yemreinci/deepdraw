@@ -1,0 +1,35 @@
+{% load static %}
+
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <title>Statics</title>
+        <link rel="stylesheet" type="text/css" href="{% static "style.css" %}">
+    </head>
+
+    <body>
+
+        <table id="stats">
+            <thead>
+                <th></th>
+                {% for user in users %}
+                    <th>{{ user.username }}</th>
+                {% endfor %}
+                <th>Overall</th>
+            </thead>
+            <tbody>
+                {% for row in count %}
+                    <tr>
+                        <td>{{ forloop.counter0 }}</td>
+                        {% for x in row %}
+                            <td>{{ x }}</td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    </body>
+
+</html>

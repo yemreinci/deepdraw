@@ -1,0 +1,36 @@
+{% load static %}
+
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <title>Viewing Image</title>
+        <link rel="stylesheet" type="text/css" href="{% static "style.css" %}">
+    </head>
+
+    <body>
+
+        {% include "web/image.html" with id=image.id %}
+
+        <button id="delete">
+            Delete
+        </button>
+
+    </body>
+
+    <script>
+        var button = document.getElementById('delete');
+
+        button.addEventListener('click', function() {
+            var ok = confirm('Are you sure ?')
+
+            if (ok) {
+                var loc = window.location;
+
+                loc += 'delete';
+
+                window.location.replace(loc);
+            }
+        })
+    </script>
+</html>

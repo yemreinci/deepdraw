@@ -1,0 +1,191 @@
+{% load static %}
+
+<!DOCTYPE html>
+
+<html>
+
+    <head>
+        <title>Draw!</title>
+        <link rel="stylesheet" type="text/css" href="{% static "style.css" %}">
+    </head>
+
+    <body>
+        <input type="hidden" id="selected-label" value="{{ label }}">
+
+        <div class="loader" id="loader"> </div>
+
+        <canvas id="canvas"> </canvas>
+
+        <button id="send">Send</button>
+
+        <div>
+            <ul id="images">
+                {% for image in images %}
+                    <li>
+                        {% include "web/image.html" with id=image.id %}
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <ul id="labels">
+        </ul>
+    </body>
+
+    <script>
+        var labels = document.getElementById('labels');
+        var selectedLabel = document.getElementById('selected-label').value;
+
+        for (var i = 0; i < 10; i++) {
+            var label = document.createElement('li');
+
+            label.value = i;
+            label.innerHTML = i.toString();
+
+            if (i.toString() == selectedLabel) {
+                label.style.backgroundColor = '#7da8af';
+            }
+
+            label.addEventListener('click', function() {
+                window.location.replace('/draw/train/' + this.value)
+            });
+
+            labels.appendChild(label);
+        }
+    </script>
+
+    <script>
+        var canvas = document.getElementById('canvas');
+        var context = canvas.getContext('2d')
+
+        function adjustCanvasSize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerWidth;
+        }
+
+        adjustCanvasSize();
+        window.addEventListener('resize', adjustCanvasSize);
+
+        context.fillStyle = '#FFFFFF';
+        context.lineCap = 'round';
+        context.lineJoin = 'round';
+        context.lineWidth = 30;
+
+        function drawLine(from, to) {
+            context.beginPath();
+            context.moveTo(from.x, from.y);
+            context.lineTo(to.x, to.y);
+
+            context.stroke();
+        };
+
+        function sendAndClear() {
+            document.getElementById('loader').style.display = 'block';
+
+            var data = canvas.toDataURL();
+            data = data.substr(data.indexOf(',') + 1);
+
+            console.log(data.length);
+
+            var ajax = new XMLHttpRequest();
+
+            ajax.open('POST', '/draw/train/' + document.getElementById('selected-label').value + '/', true);
+
+            ajax.onreadystatechange = function() {
+                if (ajax.readyState === XMLHttpRequest.DONE && ajax.status === 200) {
+                    var response = ajax.response;
+
+                    var li_elm = document.createElement('li');
+                    li_elm.innerHTML = response;
+
+                    console.log('appending ' + response);
+
+                    var images = document.getElementById('images');
+                    images.insertBefore(li_elm, images.firstChild);
+
+                    context.clearRect(0, 0, canvas.width, canvas.height);
+                    context.fillRect(0, 0, canvas.width, canvas.height);
+
+                    document.getElementById('loader').style.display = 'none';
+                }
+            };
+
+            ajax.setRequestHeader('Content-Type', 'application/json');
+            ajax.send(JSON.stringify({
+                data: data
+            }));
+        }
+
+        document.getElementById('send').addEventListener('touchstart', function (e) {
+            e.preventDefault();
+
+            sendAndClear();
+        });
+        document.getElementById('send').addEventListener('mousedown', sendAndClear);
+
+        context.fillRect(0, 0, canvas.width, canvas.height);
+
+        var lastCoor;
+        var isDrawing = false;
+
+        canvas.addEventListener('mousedown', function(e) {
+            isDrawing = true;
+
+            lastCoor = {
+                x: e.pageX,
+                y: e.pageY
+            }
+        });
+
+        canvas.addEventListener('mousemove', function(e) {
+            if (!isDrawing)
+                return;
+
+            var curCoor = {x: e.pageX, y: e.pageY};
+
+            drawLine(lastCoor, curCoor);
+
+            lastCoor = curCoor;
+        });
+
+        canvas.addEventListener('mouseup', function(e) {
+            isDrawing = false;
+        });
+
+        canvas.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+
+            isDrawing = true;
+
+            var touch = e.changedTouches[0];
+
+            lastCoor = {
+                x: touch.pageX,
+                y: touch.pageY
+            }
+        });
+
+        canvas.addEventListener('touchmove', function(e) {
+            e.preventDefault();
+
+            if (!isDrawing)
+                return;
+
+            var touch = e.changedTouches[0];
+
+            var curCoor = {x: touch.pageX, y: touch.pageY};
+
+            drawLine(lastCoor, curCoor)
+
+            lastCoor = curCoor;
+        });
+
+        canvas.addEventListener('touchend', function(e) {
+            e.preventDefault();
+
+            isDrawing = false;
+        });
+
+    </script>
+
+</html>
